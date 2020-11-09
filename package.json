@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/agiovannelli/card-deck/issues"
   },
-  "homepage": "https://github.com/agiovannelli/card-deck#readme"
+  "homepage": "https://github.com/agiovannelli/card-deck#readme",
+  "devDependencies": {
+    "eslint": "^7.13.0"
+  }
 }
