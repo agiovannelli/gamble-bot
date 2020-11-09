@@ -1,2 +1,2 @@
 # card-deck
-Standard 52-card deck of playing cards.
+Creates card deck objects and provides essential card deck functionality.
