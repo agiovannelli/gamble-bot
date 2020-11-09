@@ -1,0 +1,19 @@
+{
+  "name": "card-deck",
+  "version": "1.0.0",
+  "description": "Standard 52-card deck of playing cards.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agiovannelli/card-deck.git"
+  },
+  "author": "Alex Giovannelli",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/agiovannelli/card-deck/issues"
+  },
+  "homepage": "https://github.com/agiovannelli/card-deck#readme"
+}
