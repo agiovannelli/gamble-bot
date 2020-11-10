@@ -54,6 +54,25 @@ function createDeck(type) {
     return deck;
 }
 
+/**
+ * Shuffles a deck using Durstenfeld shuffle algorithm.
+ * @function shuffleDeck
+ * @param {An array of card objects} deck 
+ * @public
+ */
+function shuffleDeck(deck) {
+    if(deck) {
+        for (var i = deck.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var temp = deck[i];
+            deck[i] = deck[j];
+            deck[j] = temp;
+        }
+    }
+    return deck;
+}
+
 module.exports = {
-    createDeck: createDeck
+    createDeck: createDeck,
+    shuffleDeck: shuffleDeck
 };
