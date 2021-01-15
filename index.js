@@ -1,15 +1,15 @@
-const deckManager = require('./src/deckManager.js');
+const blackjackManager = require('./src/blackjackManager.js');
 
-let deck = deckManager.createDeck();
+var players = blackjackManager.RegisterPlayers(3);
 
-deck.forEach(function(card) {
-    console.log(card.displayString);
+blackjackManager.NewGame(players);
+
+players.forEach(player => {
+    console.log('Player seat: ' + player.seat);
+    console.log(player.hand);
 });
 
-console.log('\n\n');
-
-let anotherDeck = deckManager.shuffleDeck(deck);
-
-anotherDeck.forEach(function(card) {
-    console.log(card.displayString);
-});
+console.log('Player hit!');
+blackjackManager.Hit(players[0]);
+console.log('Player seat: 0');
+console.log(players[0].hand);
