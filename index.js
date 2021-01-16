@@ -1,18 +1,53 @@
 const blackjackManager = require('./src/blackjackManager.js');
 
-var players = blackjackManager.RegisterPlayers(3);
+var discordPlayerData = [
+    {
+        id: '1',
+        name: 'Alex',
+        balance: '100'
+    },
+    {
+        id: '2',
+        name: 'Sid',
+        balance: '100'
+    },
+    {
+        id: '3',
+        name: 'Myles',
+        balance: '100'
+    },
+    {
+        id: '4',
+        name: 'Peter',
+        balance: '100'
+    }
+];
 
-blackjackManager.NewGame(players);
-
-players.forEach(player => {
-    console.log('Player seat: ' + player.seat);
-    console.log(player.hand);
+discordPlayerData.push({
+    id: 'BOT',
+    name: 'Dealer'
 });
 
-console.log('Player hit!');
-blackjackManager.Hit(players[0]);
-console.log('Player seat: 0');
-console.log(players[0].hand);
+var players = blackjackManager.RegisterPlayers(discordPlayerData);
+blackjackManager.NewGame(players);
+var maxPlayerHandValue = 0;
 
-blackjackManager.DetermineHandValue(players[0]);
-console.log(players[0].handValue);
+players.forEach(player => {
+    if(player.id !== 'BOT') {
+        if(player.handValue > maxPlayerHandValue) {
+            maxPlayerHandValue = player.handValue;
+        }
+        console.log('Player: ' + player.name);
+        console.log(player.hand);
+        console.log(player.handValue);
+    }
+});
+
+var bot = players[players.length - 1];
+console.log('Dealer');
+console.log(bot.hand[1]);
+
+while(bot.handValue < maxPlayerHandValue && bot.handValue < 17) {
+    blackjackManager.Hit(bot);
+    console.log(bot.hand);
+}

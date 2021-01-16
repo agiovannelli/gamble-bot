@@ -6,14 +6,19 @@ let deck;
 /**
  * Creates a base player object.
  * @function createPlayer
- * @param {position value of player at table (left->right)} playerSeatNum 
+ * @param {position value of player at table (left->right)} playerSeatNum
+ * @param {initial player data} player
  * @private
  */
-function createPlayer(playerSeatNum) {
+function createPlayer(playerSeatNum, player) {
     return {
+        id: player.id,
+        name: player.name,
+        balance: player.balance,
         seat: playerSeatNum,
         hand: [],
-        handValue: 0
+        handValue: 0,
+        bust: false
     }
 }
 
@@ -25,7 +30,7 @@ function createPlayer(playerSeatNum) {
  * @private 
  */
 function handleAcesInHand(player, aces) {
-    aces.forEach(ace => {
+    aces.forEach(() => {
         if(player.handValue + 11 > 21) {
             player.handValue += 1;
         } else {
@@ -36,11 +41,12 @@ function handleAcesInHand(player, aces) {
 
 /**
  * Determines the player's numeric hand value from hand property.
- * @function DetermineHandValue
+ * @function determineHandValue
  * @param {player object} player 
- * @public
+ * @private
  */
-function DetermineHandValue(player) {
+function determineHandValue(player) {
+    player.bust = false;
     player.handValue = 0;
     let aces = [];
     player.hand.forEach(card => {
@@ -61,18 +67,34 @@ function DetermineHandValue(player) {
     if(aces.length) {
         handleAcesInHand(player, aces);
     }
+    if(player.handValue > 21) {
+        player.bust = true;
+    }
+}
+
+/**
+ * Resets hand and bust value for each player.
+ * @function resetPlayerValues
+ * @param {array of player objects} players 
+ * @private
+ */
+function resetPlayerValues(players) {
+    players.forEach(player => {
+        player.hand = [];
+        player.bust = false;
+    });
 }
 
 /**
  * Creates an array of player objects from provided number of desired players.
  * @function RegisterPlayers
- * @param {int for total number of player objects to create} numOfPlayers 
+ * @param {array of initial player data} initialPlayersData
  * @public
  */
-function RegisterPlayers(numOfPlayers) {
+function RegisterPlayers(initialPlayersData) {
     var players = [];
-    for(let i = 0; i < numOfPlayers; i++) {
-        players.push(createPlayer(i));
+    for(let i = 0; i < initialPlayersData.length; i++) {
+        players.push(createPlayer(i, initialPlayersData[i]));
     }
 
     return players;
@@ -88,9 +110,12 @@ function NewGame(players) {
     deck = deckManager.createDeck();
     deck = deckManager.shuffleDeck(deck);
 
+    resetPlayerValues(players);
+
     for(let i = 0; i < 2; i++) {
         players.forEach(player => {
             player.hand.push(deck.pop());
+            determineHandValue(player);
         });
     }
 }
@@ -104,12 +129,12 @@ function NewGame(players) {
 function Hit(player) {
     if(deck.length) {
         player.hand.push(deck.pop());
+        determineHandValue(player);
     }
 }
 
 module.exports = {
     RegisterPlayers: RegisterPlayers,
     NewGame: NewGame,
-    Hit: Hit,
-    DetermineHandValue: DetermineHandValue
+    Hit: Hit
 }
