@@ -73,8 +73,8 @@ function resetPlayerValues(players) {
  * @public
  */
 function NewGame(players) {
-    deck = deckManager.createDeck();
-    deck = deckManager.shuffleDeck(deck);
+    deck = deckManager.CreateDeck();
+    deck = deckManager.ShuffleDeck(deck);
 
     resetPlayerValues(players);
 
