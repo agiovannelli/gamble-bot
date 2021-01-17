@@ -38,11 +38,11 @@ function createStandardDeck() {
 
 /**
  * Creates a deck (array of cards).
- * @function createDeck
+ * @function CreateDeck
  * @param {Deck type to create (i.e. standard)} type 
  * @public
  */
-function createDeck(type) {
+function CreateDeck(type) {
     let deck;
     switch (type) {
         case 'standard':
@@ -54,6 +54,25 @@ function createDeck(type) {
     return deck;
 }
 
+/**
+ * Shuffles a deck using Durstenfeld shuffle algorithm.
+ * @function ShuffleDeck
+ * @param {An array of card objects} deck 
+ * @public
+ */
+function ShuffleDeck(deck) {
+    if(deck) {
+        for (var i = deck.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var temp = deck[i];
+            deck[i] = deck[j];
+            deck[j] = temp;
+        }
+    }
+    return deck;
+}
+
 module.exports = {
-    createDeck: createDeck
+    CreateDeck: CreateDeck,
+    ShuffleDeck: ShuffleDeck
 };
