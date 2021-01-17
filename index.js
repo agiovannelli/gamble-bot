@@ -1,4 +1,5 @@
 const blackjackManager = require('./src/blackjackManager.js');
+const playerManager = require('./src/playerManager.js');
 
 var discordPlayerData = [
     {
@@ -28,7 +29,7 @@ discordPlayerData.push({
     name: 'Dealer'
 });
 
-var players = blackjackManager.RegisterPlayers(discordPlayerData);
+var players = playerManager.RegisterPlayers(discordPlayerData, 'blackjack');
 blackjackManager.NewGame(players);
 var maxPlayerHandValue = 0;
 

@@ -4,25 +4,6 @@ const deckManager = require('./deckManager.js');
 let deck;
 
 /**
- * Creates a base player object.
- * @function createPlayer
- * @param {position value of player at table (left->right)} playerSeatNum
- * @param {initial player data} player
- * @private
- */
-function createPlayer(playerSeatNum, player) {
-    return {
-        id: player.id,
-        name: player.name,
-        balance: player.balance,
-        seat: playerSeatNum,
-        hand: [],
-        handValue: 0,
-        bust: false
-    }
-}
-
-/**
  * Determines whether to provide max or min ace value for player hand.
  * @function handleAcesInHand
  * @param {player object} player 
@@ -86,21 +67,6 @@ function resetPlayerValues(players) {
 }
 
 /**
- * Creates an array of player objects from provided number of desired players.
- * @function RegisterPlayers
- * @param {array of initial player data} initialPlayersData
- * @public
- */
-function RegisterPlayers(initialPlayersData) {
-    var players = [];
-    for(let i = 0; i < initialPlayersData.length; i++) {
-        players.push(createPlayer(i, initialPlayersData[i]));
-    }
-
-    return players;
-}
-
-/**
  * Creates new deck and shuffles, deals cards to players at table.
  * @function NewGame
  * @param {array of players to initial deal hands} players 
@@ -134,7 +100,6 @@ function Hit(player) {
 }
 
 module.exports = {
-    RegisterPlayers: RegisterPlayers,
     NewGame: NewGame,
     Hit: Hit
-}
+};
