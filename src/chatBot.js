@@ -1,6 +1,8 @@
 'use strict';
 
 const Discord = require("discord.js");
+const BlackjackManager = require('./blackjackManager.js');
+const PlayerManager = require('./playerManager.js');
 
 let currentChannel;
 let messageHandlerLocked;
@@ -37,8 +39,8 @@ function displayHelpOptions() {
 function listPlayersAtTable() {
     currentChannel.send('Let\'s see who\'s at the table!');
     if(playerMap && Array.from(playerMap.entries()).length) {
-        playerMap.forEach((value) => {
-            currentChannel.send(`Seat ${value.seat + 1}: ${value.name}`);
+        playerMap.forEach((value, key) => {
+            currentChannel.send(`Seat ${key + 1}: ${value.name}`);
         });
     } else {
         currentChannel.send('I\'m here all by myself... >_<');
@@ -66,7 +68,7 @@ function collectPlayers() {
     playerCollector.on('collect', m => {
         if(!playerMap.get(m.author.id) && seatCounter < 4) {
             m.reply('welcome to the table!');
-            playerMap.set(m.author.id, {name: m.author.username, seat: seatCounter});
+            playerMap.set(seatCounter, { id: m.author.id, name: m.author.username });
             seatCounter++;
         }
     });
@@ -74,6 +76,7 @@ function collectPlayers() {
     playerCollector.on('end', () => {
         currentChannel.send('Seats are now reserved!');
         listPlayersAtTable();
+        PlayerManager.RegisterPlayers(playerMap, 'blackjack');
         messageHandlerLocked = false;
     });
 }
