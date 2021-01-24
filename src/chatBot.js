@@ -84,13 +84,12 @@ function displayPlayersHands() {
  * @private
  */
 function playRoundOfBlackjack() {
-    let totalPlayersAtTable = Array.from(playerMap.entries()).length;
+    let totalPlayersAtTable = playerMap ? Array.from(playerMap.entries()).length : false;
     if(totalPlayersAtTable) {
         BlackjackManager.NewGame(playerMap);
         displayPlayersHands();
-        // TODO: Implement additional logic here...
     } else {
-        console.log('There\'s nobody at the table... trying typing \'-setup\' first, desu! ~~');
+        currentChannel.send('There\'s nobody at the table... trying typing \'-setup\' first, desu! ~~');
     }
 }
 
