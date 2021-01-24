@@ -56,20 +56,21 @@ function determineHandValue(player) {
 /**
  * Resets hand and bust value for each player.
  * @function resetPlayerValues
- * @param {array of player objects} players 
+ * @param {map of player objects} players 
  * @private
  */
 function resetPlayerValues(players) {
-    players.forEach(player => {
+    players.forEach((player, key) => {
         player.hand = [];
         player.bust = false;
+        players.set(key, player);
     });
 }
 
 /**
  * Creates new deck and shuffles, deals cards to players at table.
  * @function NewGame
- * @param {array of players to initial deal hands} players 
+ * @param {map of players to initial deal hands} players 
  * @public
  */
 function NewGame(players) {
@@ -79,9 +80,9 @@ function NewGame(players) {
     resetPlayerValues(players);
 
     for(let i = 0; i < 2; i++) {
-        players.forEach(player => {
-            player.hand.push(deck.pop());
-            determineHandValue(player);
+        players.forEach((player, key) => {
+            Hit(player);
+            players.set(key, player);
         });
     }
 }
