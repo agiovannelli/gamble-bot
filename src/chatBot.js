@@ -97,7 +97,7 @@ function playerTurn(seatNum, maxSeatNum) {
         let collectorFilter = msg => msg.content.toLowerCase() === '-hit' || msg.content.toLowerCase() === '-stand';
         let turnCollector = new Discord.MessageCollector(currentChannel, collectorFilter, collectorOptions);
 
-        // TODO: Refactor, handle dealer turn, and result of round.
+        // TODO: Refactor and handle result of round (i.e. players who won/lost).
         turnCollector.on('collect', m => {
             if(m.author.id === currentPlayer.id) {
                 switch(m.content.toLowerCase()) {
@@ -123,6 +123,8 @@ function playerTurn(seatNum, maxSeatNum) {
             playerTurn(seatNum, maxSeatNum);
         });
     } else {
+        BlackjackManager.DealerTurn(playerMap, seatNum);
+        displayPlayersHands();
         messageHandlerLocked = false;
     }
 }

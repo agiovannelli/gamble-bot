@@ -68,6 +68,23 @@ function resetPlayerValues(players) {
 }
 
 /**
+ * Determines player with highest hand value.
+ * @function determinePlayerMaxHandValue
+ * @param {Map of players at blackjack table} players 
+ * @param {Dealer object containing hand and hand value info} dealer 
+ * @private
+ */
+function determinePlayerMaxHandValue(players, dealer) {
+    let maxHandValue = 0;
+    players.forEach(player => {
+        if(player.id !== dealer.id && !player.bust && player.handValue > maxHandValue) {
+            maxHandValue = player.handValue;
+        }
+    });
+    return maxHandValue;
+}
+
+/**
  * Creates new deck and shuffles, deals cards to players at table.
  * @function NewGame
  * @param {map of players to initial deal hands} players 
@@ -100,7 +117,26 @@ function Hit(player) {
     }
 }
 
+/**
+ * Performs a dealers turn based on player's hands at table.
+ * @function DealerTurn
+ * @param {Map of players at blackjack table} players 
+ * @param {Seat of dealer at blackjack table} dealerSeat 
+ * @public
+ */
+function DealerTurn(players, dealerSeat) {
+    let dealer = players.get(dealerSeat);
+    let maxPlayerHandValue = determinePlayerMaxHandValue(players, dealer);
+
+    while(dealer.handValue < maxPlayerHandValue && dealer.handValue < 17) {
+        Hit(dealer);
+    }
+
+    players.set(dealerSeat, dealer);
+}
+
 module.exports = {
     NewGame: NewGame,
-    Hit: Hit
+    Hit: Hit,
+    DealerTurn: DealerTurn
 };
