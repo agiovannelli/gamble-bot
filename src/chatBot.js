@@ -17,7 +17,7 @@ let playerMap;
  */
 function defaultMessage(msg) {
     msg.reply('Oops! I didn\'t quite get that... Please be patient with me and try again ~~ UwU');
-    currentChannel.send('Try typing \'help\' for a list of commands!');
+    currentChannel.send('Try typing \'-help\' for a list of commands!');
 }
 
 /**
@@ -27,8 +27,9 @@ function defaultMessage(msg) {
  */
 function displayHelpOptions() {
     currentChannel.send('It looks like you need reminded of all that I can do ~~ ^_^');
-    currentChannel.send('To gather players for a game at the game table, type \'setup\'.');
-    currentChannel.send('To list the current players at the game table, type \'table\'.');
+    currentChannel.send('To gather players for a game at the game table, type \'-setup\'.');
+    currentChannel.send('To list the current players at the game table, type \'-table\'.');
+    currentChannel.send('To play a round of blackjack,  type \'-play\'.');
 }
 
 /**
@@ -48,6 +49,52 @@ function listPlayersAtTable() {
 }
 
 /**
+ * Iterates player hand array and extracts display strings, concatenates into single display string.
+ * @function createPlayerHandString
+ * @param {Array of card objects for given player} playerHand 
+ * @private
+ */
+function createPlayerHandString(playerHand) {
+    let result = '';
+    for(let i = 0; i < playerHand.length; i++) {
+        result += playerHand[i].displayString;
+        if(i+1 !== playerHand.length) {
+            result += ', ';
+        }
+    }
+    return result;
+}
+
+/**
+ * Provides message detailing all table member's hands to channel.
+ * @function displayPlayersHands
+ * @private
+ */
+function displayPlayersHands() {
+    currentChannel.send('Players cards: ');
+    playerMap.forEach((player) => {
+        let playerHandString = createPlayerHandString(player.hand);
+        currentChannel.send(`${player.name}\'s hand: ${playerHandString}`);
+    });
+}
+
+/**
+ * Hosts messaging logic required to play a single round of blackjack with table members.
+ * @function playRoundOfBlackjack
+ * @private
+ */
+function playRoundOfBlackjack() {
+    let totalPlayersAtTable = Array.from(playerMap.entries()).length;
+    if(totalPlayersAtTable) {
+        BlackjackManager.NewGame(playerMap);
+        displayPlayersHands();
+        // TODO: Implement additional logic here...
+    } else {
+        console.log('There\'s nobody at the table... trying typing \'-setup\' first, desu! ~~');
+    }
+}
+
+/**
  * Collects unique players from chat who requested to join via Discord.MessageCollector.
  * @function collectPlayers
  * @private
@@ -56,20 +103,20 @@ function collectPlayers() {
     messageHandlerLocked = true;
     playerMap = new Map();
 
-    currentChannel.send('Seats are available at the game table! Type \'join\' to claim your seat! Only 4 spots are available!');
+    currentChannel.send('Seats are available at the game table! Type \'-join\' to claim your seat! Only 4 spots are available!');
 
-    let seatCounter = 0;
+    let playerIds = [];
     let collectorOptions = {
         time: 10000
     };
-    let collectorFilter = msg => msg.content.toLowerCase() === 'join';
+    let collectorFilter = msg => msg.content.toLowerCase() === '-join';
     let playerCollector = new Discord.MessageCollector(currentChannel, collectorFilter, collectorOptions);
 
     playerCollector.on('collect', m => {
-        if(!playerMap.get(m.author.id) && seatCounter < 4) {
+        if(!playerIds.includes(m.author.id) && playerIds.length < 4) {
             m.reply('welcome to the table!');
-            playerMap.set(seatCounter, { id: m.author.id, name: m.author.username });
-            seatCounter++;
+            playerMap.set(playerIds.length, { id: m.author.id, name: m.author.username });
+            playerIds.push(m.author.id);
         }
     });
 
@@ -103,17 +150,22 @@ function SetupChatBot(client, envProps) {
 function MessageHandler(msg) {
     if(msg.author.id !== botId && !messageHandlerLocked) {
         switch(msg.content.toLowerCase()){
-            case 'setup':
+            case '-setup':
                 collectPlayers();
                 break;
-            case 'table':
+            case '-table':
                 listPlayersAtTable();
                 break;
-            case 'help':
+            case '-help':
                 displayHelpOptions();
                 break;
+            case '-play':
+                playRoundOfBlackjack();
+                break;
             default:
-                defaultMessage(msg);
+                if(msg.content[0] === '-') {
+                    defaultMessage(msg);
+                }
                 break;
         }
     }
