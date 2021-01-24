@@ -71,11 +71,60 @@ function createPlayerHandString(playerHand) {
  * @private
  */
 function displayPlayersHands() {
-    currentChannel.send('Players cards: ');
+    currentChannel.send('Player\'s hands: ');
     playerMap.forEach((player) => {
         let playerHandString = createPlayerHandString(player.hand);
         currentChannel.send(`${player.name}\'s hand: ${playerHandString}`);
     });
+}
+
+/**
+ * Creates MessageCollector unique to each player for their turn.
+ * @function playerTurn
+ * @param {Seat of current player whose turn it is} seatNum 
+ * @param {Highest seat number prior to Dealer seat} maxSeatNum 
+ * @private
+ */
+function playerTurn(seatNum, maxSeatNum) {
+    if(seatNum < maxSeatNum) {
+        let currentPlayer = playerMap.get(seatNum);
+
+        currentChannel.send(`${currentPlayer.name}: \'-hit\' or \'-stand\'?`);
+
+        let collectorOptions = {
+            time: 15000
+        };
+        let collectorFilter = msg => msg.content.toLowerCase() === '-hit' || msg.content.toLowerCase() === '-stand';
+        let turnCollector = new Discord.MessageCollector(currentChannel, collectorFilter, collectorOptions);
+
+        // TODO: Refactor, handle dealer turn, and result of round.
+        turnCollector.on('collect', m => {
+            if(m.author.id === currentPlayer.id) {
+                switch(m.content.toLowerCase()) {
+                    case '-hit':
+                        BlackjackManager.Hit(currentPlayer);
+                        playerMap.set(seatNum, currentPlayer);
+                        let playerHandString = createPlayerHandString(currentPlayer.hand);
+                        currentChannel.send(`${currentPlayer.name}\'s hand: ${playerHandString}`);
+                        currentChannel.send(`${currentPlayer.name}: \'-hit\' or \'-stand\'?`);
+                        break;
+                    case '-stand':
+                        turnCollector.stop();
+                        break;
+                    default:
+                        break;
+                }
+            }
+        });
+
+        turnCollector.on('end', () => {
+            seatNum++;
+            currentChannel.send(`${currentPlayer.name}\'s turn is over.`);
+            playerTurn(seatNum, maxSeatNum);
+        });
+    } else {
+        messageHandlerLocked = false;
+    }
 }
 
 /**
@@ -86,8 +135,10 @@ function displayPlayersHands() {
 function playRoundOfBlackjack() {
     let totalPlayersAtTable = playerMap ? Array.from(playerMap.entries()).length : false;
     if(totalPlayersAtTable) {
+        messageHandlerLocked = true;
         BlackjackManager.NewGame(playerMap);
         displayPlayersHands();
+        playerTurn(0, totalPlayersAtTable - 1);
     } else {
         currentChannel.send('There\'s nobody at the table... trying typing \'-setup\' first, desu! ~~');
     }
@@ -122,6 +173,7 @@ function collectPlayers() {
     playerCollector.on('end', () => {
         currentChannel.send('Seats are now reserved!');
         listPlayersAtTable();
+        playerMap.set(playerIds.length, { id: botId, name: 'Dealer' });
         PlayerManager.RegisterPlayers(playerMap, 'blackjack');
         messageHandlerLocked = false;
     });
