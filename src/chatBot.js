@@ -134,7 +134,7 @@ function playerTurn(seatNum, maxSeatNum) {
  */
 function playRoundOfBlackjack() {
     let totalPlayersAtTable = playerMap ? Array.from(playerMap.entries()).length : false;
-    if(totalPlayersAtTable) {
+    if(totalPlayersAtTable && totalPlayersAtTable > 1) {
         messageHandlerLocked = true;
         BlackjackManager.NewGame(playerMap);
         displayPlayersHands();
