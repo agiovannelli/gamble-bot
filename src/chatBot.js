@@ -16,8 +16,9 @@ let playerMap;
  * @private
  */
 function defaultMessage(msg) {
-    msg.reply('Oops! I didn\'t quite get that... Please be patient with me and try again ~~ UwU');
-    currentChannel.send('Try typing \'-help\' for a list of commands!');
+    if(msg.content[0] === '-') {
+        msg.reply('Oops! I didn\'t quite get that... Please be patient with me and try again ~~ UwU\nTry typing \'-help\' for a list of commands!');
+    }
 }
 
 /**
@@ -26,10 +27,7 @@ function defaultMessage(msg) {
  * @private
  */
 function displayHelpOptions() {
-    currentChannel.send('It looks like you need reminded of all that I can do ~~ ^_^');
-    currentChannel.send('To gather players for a game at the game table, type \'-setup\'.');
-    currentChannel.send('To list the current players at the game table, type \'-table\'.');
-    currentChannel.send('To play a round of blackjack,  type \'-play\'.');
+    currentChannel.send('It looks like you need reminded of all that I can do ~~ ^_^\nTo gather players for a game at the game table, type \'-setup\'.\nTo list the current players at the game table, type \'-table\'.\nTo play a round of blackjack,  type \'-play\'.');
 }
 
 /**
@@ -71,11 +69,62 @@ function createPlayerHandString(playerHand) {
  * @private
  */
 function displayPlayersHands() {
-    currentChannel.send('Players cards: ');
+    currentChannel.send('Player\'s hands: ');
     playerMap.forEach((player) => {
         let playerHandString = createPlayerHandString(player.hand);
         currentChannel.send(`${player.name}\'s hand: ${playerHandString}`);
     });
+}
+
+/**
+ * Creates MessageCollector unique to each player for their turn.
+ * @function playerTurn
+ * @param {Seat of current player whose turn it is} seatNum 
+ * @param {Highest seat number prior to Dealer seat} maxSeatNum 
+ * @private
+ */
+function playerTurn(seatNum, maxSeatNum) {
+    if(seatNum < maxSeatNum) {
+        let currentPlayer = playerMap.get(seatNum);
+
+        currentChannel.send(`${currentPlayer.name}: \'-hit\' or \'-stand\'?`);
+
+        let collectorOptions = {
+            time: 15000
+        };
+        let collectorFilter = msg => msg.content.toLowerCase() === '-hit' || msg.content.toLowerCase() === '-stand';
+        let turnCollector = new Discord.MessageCollector(currentChannel, collectorFilter, collectorOptions);
+
+        // TODO: Refactor and handle result of round (i.e. players who won/lost).
+        turnCollector.on('collect', m => {
+            if(m.author.id === currentPlayer.id) {
+                switch(m.content.toLowerCase()) {
+                    case '-hit':
+                        BlackjackManager.Hit(currentPlayer);
+                        playerMap.set(seatNum, currentPlayer);
+                        let playerHandString = createPlayerHandString(currentPlayer.hand);
+                        currentChannel.send(`${currentPlayer.name}\'s hand: ${playerHandString}`);
+                        currentChannel.send(`${currentPlayer.name}: \'-hit\' or \'-stand\'?`);
+                        break;
+                    case '-stand':
+                        turnCollector.stop();
+                        break;
+                    default:
+                        break;
+                }
+            }
+        });
+
+        turnCollector.on('end', () => {
+            seatNum++;
+            currentChannel.send(`${currentPlayer.name}\'s turn is over.`);
+            playerTurn(seatNum, maxSeatNum);
+        });
+    } else {
+        BlackjackManager.DealerTurn(playerMap, seatNum);
+        displayPlayersHands();
+        messageHandlerLocked = false;
+    }
 }
 
 /**
@@ -84,13 +133,14 @@ function displayPlayersHands() {
  * @private
  */
 function playRoundOfBlackjack() {
-    let totalPlayersAtTable = Array.from(playerMap.entries()).length;
+    let totalPlayersAtTable = playerMap ? Array.from(playerMap.entries()).length : false;
     if(totalPlayersAtTable) {
+        messageHandlerLocked = true;
         BlackjackManager.NewGame(playerMap);
         displayPlayersHands();
-        // TODO: Implement additional logic here...
+        playerTurn(0, totalPlayersAtTable - 1);
     } else {
-        console.log('There\'s nobody at the table... trying typing \'-setup\' first, desu! ~~');
+        currentChannel.send('There\'s nobody at the table... trying typing \'-setup\' first, desu! ~~');
     }
 }
 
@@ -123,6 +173,7 @@ function collectPlayers() {
     playerCollector.on('end', () => {
         currentChannel.send('Seats are now reserved!');
         listPlayersAtTable();
+        playerMap.set(playerIds.length, { id: botId, name: 'Dealer' });
         PlayerManager.RegisterPlayers(playerMap, 'blackjack');
         messageHandlerLocked = false;
     });
@@ -163,9 +214,7 @@ function MessageHandler(msg) {
                 playRoundOfBlackjack();
                 break;
             default:
-                if(msg.content[0] === '-') {
-                    defaultMessage(msg);
-                }
+                defaultMessage(msg);
                 break;
         }
     }
