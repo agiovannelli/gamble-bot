@@ -16,8 +16,9 @@ let playerMap;
  * @private
  */
 function defaultMessage(msg) {
-    msg.reply('Oops! I didn\'t quite get that... Please be patient with me and try again ~~ UwU');
-    currentChannel.send('Try typing \'-help\' for a list of commands!');
+    if(msg.content[0] === '-') {
+        msg.reply('Oops! I didn\'t quite get that... Please be patient with me and try again ~~ UwU\nTry typing \'-help\' for a list of commands!');
+    }
 }
 
 /**
@@ -26,10 +27,7 @@ function defaultMessage(msg) {
  * @private
  */
 function displayHelpOptions() {
-    currentChannel.send('It looks like you need reminded of all that I can do ~~ ^_^');
-    currentChannel.send('To gather players for a game at the game table, type \'-setup\'.');
-    currentChannel.send('To list the current players at the game table, type \'-table\'.');
-    currentChannel.send('To play a round of blackjack,  type \'-play\'.');
+    currentChannel.send('It looks like you need reminded of all that I can do ~~ ^_^\nTo gather players for a game at the game table, type \'-setup\'.\nTo list the current players at the game table, type \'-table\'.\nTo play a round of blackjack,  type \'-play\'.');
 }
 
 /**
@@ -216,9 +214,7 @@ function MessageHandler(msg) {
                 playRoundOfBlackjack();
                 break;
             default:
-                if(msg.content[0] === '-') {
-                    defaultMessage(msg);
-                }
+                defaultMessage(msg);
                 break;
         }
     }
