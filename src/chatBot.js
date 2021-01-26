@@ -38,9 +38,11 @@ function displayHelpOptions() {
 function listPlayersAtTable() {
     currentChannel.send('Let\'s see who\'s at the table!');
     if(playerMap && Array.from(playerMap.entries()).length) {
+        let playerListString = '';
         playerMap.forEach((value, key) => {
-            currentChannel.send(`Seat ${key + 1}: ${value.name}`);
+            playerListString += `Seat ${key + 1}: ${value.name}\n`;
         });
+        currentChannel.send(playerListString);
     } else {
         currentChannel.send('I\'m here all by myself... >_<');
     }
@@ -77,6 +79,50 @@ function displayPlayersHands() {
 }
 
 /**
+ * Determines if player has busted or can ask for another card.
+ * @function handlePlayerHitResult
+ * @param {current player object} player 
+ * @param {MessageCollector for player turn handling} turnCollector 
+ * @param {seat value of current player} seatNum 
+ * @private
+ */
+function handlePlayerHitResult(player, turnCollector, seatNum) {
+    playerMap.set(seatNum, player);
+    let playerHandString = createPlayerHandString(player.hand);
+    currentChannel.send(`${player.name}\'s hand: ${playerHandString}`);
+
+    if(player.bust) {
+        currentChannel.send('Bust!');
+        turnCollector.stop();
+    } else {
+        currentChannel.send(`${player.name}: \'-hit\' or \'-stand\'?`);
+    }
+}
+
+/**
+ * Displays who has won/tied/lost based on dealer hand value.
+ * @function displayRoundResult
+ * @param {seat value of dealer} dealerSeat 
+ * @private
+ */
+function displayRoundResult(dealerSeat) {
+    let dealer = playerMap.get(dealerSeat);
+    let resultString = '';
+    currentChannel.send('Let\'s see the round results!');
+    for(let i = 0; i < dealerSeat; i++) {
+        let currentPlayer = playerMap.get(i);
+        if((dealer.bust && !currentPlayer.bust) || (currentPlayer.handValue > dealer.handValue && !currentPlayer.bust && !dealer.bust)) {
+            resultString += `${currentPlayer.name}: wins!\n`;
+        } else if(currentPlayer.handValue === dealer.handValue && !currentPlayer.bust && !dealer.bust) {
+            resultString += `${currentPlayer.name}: draw!\n`;
+        } else {
+            resultString += `${currentPlayer.name}: loses!\n`;
+        }
+    }
+    currentChannel.send(resultString);
+}
+
+/**
  * Creates MessageCollector unique to each player for their turn.
  * @function playerTurn
  * @param {Seat of current player whose turn it is} seatNum 
@@ -95,16 +141,12 @@ function playerTurn(seatNum, maxSeatNum) {
         let collectorFilter = msg => msg.content.toLowerCase() === '-hit' || msg.content.toLowerCase() === '-stand';
         let turnCollector = new Discord.MessageCollector(currentChannel, collectorFilter, collectorOptions);
 
-        // TODO: Refactor and handle result of round (i.e. players who won/lost).
         turnCollector.on('collect', m => {
             if(m.author.id === currentPlayer.id) {
                 switch(m.content.toLowerCase()) {
                     case '-hit':
                         BlackjackManager.Hit(currentPlayer);
-                        playerMap.set(seatNum, currentPlayer);
-                        let playerHandString = createPlayerHandString(currentPlayer.hand);
-                        currentChannel.send(`${currentPlayer.name}\'s hand: ${playerHandString}`);
-                        currentChannel.send(`${currentPlayer.name}: \'-hit\' or \'-stand\'?`);
+                        handlePlayerHitResult(currentPlayer, turnCollector, seatNum);
                         break;
                     case '-stand':
                         turnCollector.stop();
@@ -123,6 +165,7 @@ function playerTurn(seatNum, maxSeatNum) {
     } else {
         BlackjackManager.DealerTurn(playerMap, seatNum);
         displayPlayersHands();
+        displayRoundResult(seatNum);
         messageHandlerLocked = false;
     }
 }
