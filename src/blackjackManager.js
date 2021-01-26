@@ -128,7 +128,7 @@ function DealerTurn(players, dealerSeat) {
     let dealer = players.get(dealerSeat);
     let maxPlayerHandValue = determinePlayerMaxHandValue(players, dealer);
 
-    while(dealer.handValue < maxPlayerHandValue && dealer.handValue < 17) {
+    while(dealer.handValue <= maxPlayerHandValue && dealer.handValue < 17) {
         Hit(dealer);
     }
 
