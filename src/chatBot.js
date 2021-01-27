@@ -1,8 +1,8 @@
 'use strict';
 
 const Discord = require("discord.js");
-const BlackjackManager = require('./blackjackManager.js');
-const PlayerManager = require('./playerManager.js');
+const BlackjackManager = require('./managers/blackjackManager.js');
+const PlayerManager = require('./managers/playerManager.js');
 
 let currentChannel;
 let messageHandlerLocked;
@@ -102,14 +102,13 @@ function handlePlayerHitResult(player, turnCollector, seatNum) {
 /**
  * Displays who has won/tied/lost based on dealer hand value.
  * @function displayRoundResult
- * @param {seat value of dealer} dealerSeat 
  * @private
  */
-function displayRoundResult(dealerSeat) {
-    let dealer = playerMap.get(dealerSeat);
+function displayRoundResult() {
+    let dealer = playerMap.get(0);
     let resultString = '';
     currentChannel.send('Let\'s see the round results!');
-    for(let i = 0; i < dealerSeat; i++) {
+    for(let i = 1; i < Array.from(playerMap.entries()).length; i++) {
         let currentPlayer = playerMap.get(i);
         if((dealer.bust && !currentPlayer.bust) || (currentPlayer.handValue > dealer.handValue && !currentPlayer.bust && !dealer.bust)) {
             resultString += `${currentPlayer.name}: wins!\n`;
@@ -163,9 +162,9 @@ function playerTurn(seatNum, maxSeatNum) {
             playerTurn(seatNum, maxSeatNum);
         });
     } else {
-        BlackjackManager.DealerTurn(playerMap, seatNum);
+        BlackjackManager.DealerTurn(playerMap, 0);
         displayPlayersHands();
-        displayRoundResult(seatNum);
+        displayRoundResult();
         messageHandlerLocked = false;
     }
 }
@@ -181,7 +180,7 @@ function playRoundOfBlackjack() {
         messageHandlerLocked = true;
         BlackjackManager.NewGame(playerMap);
         displayPlayersHands();
-        playerTurn(0, totalPlayersAtTable - 1);
+        playerTurn(1, totalPlayersAtTable);
     } else {
         currentChannel.send('There\'s nobody at the table... trying typing \'-setup\' first, desu! ~~');
     }
@@ -192,13 +191,16 @@ function playRoundOfBlackjack() {
  * @function collectPlayers
  * @private
  */
-function collectPlayers() {
+function collectPlayers(game) {
     messageHandlerLocked = true;
     playerMap = new Map();
 
+    let playerIds = [];
+    playerMap.set(playerIds.length, { id: botId, name: 'Dealer' });
+    playerIds.push(botId);
+
     currentChannel.send('Seats are available at the game table! Type \'-join\' to claim your seat! Only 4 spots are available!');
 
-    let playerIds = [];
     let collectorOptions = {
         time: 10000
     };
@@ -206,7 +208,7 @@ function collectPlayers() {
     let playerCollector = new Discord.MessageCollector(currentChannel, collectorFilter, collectorOptions);
 
     playerCollector.on('collect', m => {
-        if(!playerIds.includes(m.author.id) && playerIds.length < 4) {
+        if(!playerIds.includes(m.author.id) && playerIds.length < 5) {
             m.reply('welcome to the table!');
             playerMap.set(playerIds.length, { id: m.author.id, name: m.author.username });
             playerIds.push(m.author.id);
@@ -216,8 +218,7 @@ function collectPlayers() {
     playerCollector.on('end', () => {
         currentChannel.send('Seats are now reserved!');
         listPlayersAtTable();
-        playerMap.set(playerIds.length, { id: botId, name: 'Dealer' });
-        PlayerManager.RegisterPlayers(playerMap, 'blackjack');
+        PlayerManager.RegisterPlayers(playerMap, game);
         messageHandlerLocked = false;
     });
 }
@@ -245,7 +246,7 @@ function MessageHandler(msg) {
     if(msg.author.id !== botId && !messageHandlerLocked) {
         switch(msg.content.toLowerCase()){
             case '-setup':
-                collectPlayers();
+                collectPlayers('blackjack');
                 break;
             case '-table':
                 listPlayersAtTable();
