@@ -74,7 +74,7 @@ function displayPlayersHands() {
     currentChannel.send('Player\'s hands: ');
     playerMap.forEach((player) => {
         let playerHandString = createPlayerHandString(player.hand);
-        currentChannel.send(`${player.name}\'s hand: ${playerHandString}`);
+        currentChannel.send(`${player.name}\'s hand (${player.handValue}): ${playerHandString}`);
     });
 }
 
@@ -89,7 +89,7 @@ function displayPlayersHands() {
 function handlePlayerHitResult(player, turnCollector, seatNum) {
     playerMap.set(seatNum, player);
     let playerHandString = createPlayerHandString(player.hand);
-    currentChannel.send(`${player.name}\'s hand: ${playerHandString}`);
+    currentChannel.send(`${player.name}\'s hand (${player.handValue}): ${playerHandString}`);
 
     if(player.bust) {
         currentChannel.send('Bust!');
@@ -169,6 +169,27 @@ function playerTurn(seatNum, maxSeatNum) {
     }
 }
 
+function takePlayerBets() {
+    let collectorOptions = {
+        time: 10000
+    };
+    let collectorFilter = msg => msg.content.toLowerCase().includes('-bet') || msg.content.toLowerCase().includes('-skip');
+    let playerBetCollector = new Discord.MessageCollector(currentChannel, collectorFilter, collectorOptions);
+
+    playerBetCollector.on('collect', m => {
+        if(Array.from(playerMap.entries()).includes(m.author.id) && msg.content.toLowerCase().includes('-bet')) {
+            let delimitedBetString = m.content.split(' ');
+            PlayerManager.HandlePlayerBet(playerMap, m.author.id, delimitedBetString[1]);
+        } else if(Array.from(playerMap.entries()).includes(m.author.id) && msg.content.toLowerCase().includes('-skip')) {
+            // TODO: handle turn skip... this will impact gameplay...
+        }
+    });
+
+    playerBetCollector.on('end', () => {
+        currentChannel.send('Betting is closed!\nLet\'s play!');
+    });
+}
+
 /**
  * Hosts messaging logic required to play a single round of blackjack with table members.
  * @function playRoundOfBlackjack
@@ -233,7 +254,7 @@ function collectPlayers(game) {
 function SetupChatBot(client, envProps) {
     botId = envProps.BOT_ID;
     currentChannel = client.channels.cache.get(envProps.CHANNEL_ID);
-    currentChannel.send('Blackjack-chan is now online!');
+    currentChannel.send('Kakegurui-chan is now online!');
 }
 
 /**
