@@ -10,6 +10,13 @@ let botId;
 let playerMap;
 
 /**
+ * No operation function.
+ * @function noop
+ * @private
+ */
+function noop() {}
+
+/**
  * Notifies channel when an input is entered in chat but not recognized.
  * @param {Message received in MessageHandler} msg 
  * @function defaultMessage
@@ -73,8 +80,10 @@ function createPlayerHandString(playerHand) {
 function displayPlayersHands() {
     currentChannel.send('Player\'s hands: ');
     playerMap.forEach((player) => {
-        let playerHandString = createPlayerHandString(player.hand);
-        currentChannel.send(`${player.name}\'s hand (${player.handValue}): ${playerHandString}`);
+        if(!player.skipRound) {
+            let playerHandString = createPlayerHandString(player.hand);
+            currentChannel.send(`${player.name}\'s hand (${player.handValue}): ${playerHandString}`);
+        }
     });
 }
 
@@ -110,15 +119,18 @@ function displayRoundResult() {
     currentChannel.send('Let\'s see the round results!');
     for(let i = 1; i < Array.from(playerMap.entries()).length; i++) {
         let currentPlayer = playerMap.get(i);
-        if((dealer.bust && !currentPlayer.bust) || (currentPlayer.handValue > dealer.handValue && !currentPlayer.bust && !dealer.bust)) {
-            resultString += `${currentPlayer.name}: wins!\n`;
-        } else if(currentPlayer.handValue === dealer.handValue && !currentPlayer.bust && !dealer.bust) {
-            resultString += `${currentPlayer.name}: draw!\n`;
-        } else {
-            resultString += `${currentPlayer.name}: loses!\n`;
+        if(currentPlayer && !currentPlayer.skipRound) {
+            if((dealer.bust && !currentPlayer.bust) || (currentPlayer.handValue > dealer.handValue && !currentPlayer.bust && !dealer.bust)) {
+                resultString += `${currentPlayer.name}: wins!\n`;
+            } else if(currentPlayer.handValue === dealer.handValue && !currentPlayer.bust && !dealer.bust) {
+                resultString += `${currentPlayer.name}: draw!\n`;
+            } else {
+                resultString += `${currentPlayer.name}: loses!\n`;
+            }
         }
     }
-    currentChannel.send(resultString);
+    resultString !== '' ? currentChannel.send(resultString) : noop();
+    // TODO: Add logic to reward winner players and update their balance with earnings.
 }
 
 /**
@@ -128,10 +140,12 @@ function displayRoundResult() {
  * @param {Highest seat number prior to Dealer seat} maxSeatNum 
  * @private
  */
-function playerTurn(seatNum, maxSeatNum) {
-    if(seatNum < maxSeatNum) {
-        let currentPlayer = playerMap.get(seatNum);
-
+function playerTurn(seatNum, maxSeatNum) {   
+    let currentPlayer = playerMap.get(seatNum);
+    if(currentPlayer && currentPlayer.skipRound) {
+        seatNum++;
+        playerTurn(seatNum, maxSeatNum);
+    } else if(currentPlayer && seatNum < maxSeatNum) {
         currentChannel.send(`${currentPlayer.name}: \'-hit\' or \'-stand\'?`);
 
         let collectorOptions = {
@@ -169,24 +183,48 @@ function playerTurn(seatNum, maxSeatNum) {
     }
 }
 
-function takePlayerBets() {
+/**
+ * Collects players bets, then launches round of blackjack.
+ * @function collectBetsAndPlay
+ * @param {Integer of players at game table} totalPlayersAtTable
+ * @private
+ */
+function collectBetsAndPlay(totalPlayersAtTable) {
+    messageHandlerLocked = true;
+    PlayerManager.ResetPlayerBetValues(playerMap);
+    currentChannel.send('Place your bets for the upcoming round! Type \'-bet\' followed by the amount you wish to wager :3\nBy not providing a bet amount, you will be skipped.');
+    let totalBets = 0;
+
     let collectorOptions = {
         time: 10000
     };
-    let collectorFilter = msg => msg.content.toLowerCase().includes('-bet') || msg.content.toLowerCase().includes('-skip');
+    let collectorFilter = msg => msg.content.toLowerCase().includes('-bet');
     let playerBetCollector = new Discord.MessageCollector(currentChannel, collectorFilter, collectorOptions);
 
     playerBetCollector.on('collect', m => {
-        if(Array.from(playerMap.entries()).includes(m.author.id) && msg.content.toLowerCase().includes('-bet')) {
+        let playerKey = PlayerManager.DeterminePlayerMapKey(playerMap, m.author.id);
+        if(playerKey && m.content.toLowerCase().includes('-bet')) {
             let delimitedBetString = m.content.split(' ');
-            PlayerManager.HandlePlayerBet(playerMap, m.author.id, delimitedBetString[1]);
-        } else if(Array.from(playerMap.entries()).includes(m.author.id) && msg.content.toLowerCase().includes('-skip')) {
-            // TODO: handle turn skip... this will impact gameplay...
+            let isBetValid = PlayerManager.HandlePlayerBet(playerMap, playerKey, delimitedBetString[1]);
+            if(isBetValid) {
+                m.reply(`has bet $${delimitedBetString[1]}.`);
+                totalBets++;
+            } else {
+                m.reply('your bet isn\'t valid... D:');
+            }
         }
     });
 
     playerBetCollector.on('end', () => {
         currentChannel.send('Betting is closed!\nLet\'s play!');
+        if(totalBets) {
+            BlackjackManager.NewGame(playerMap);
+            displayPlayersHands();
+            playerTurn(1, totalPlayersAtTable);
+        } else {
+            currentChannel.send('No bets were made... I guess nobody can beat me, uwa ~~');
+            messageHandlerLocked = false;
+        }
     });
 }
 
@@ -198,10 +236,7 @@ function takePlayerBets() {
 function playRoundOfBlackjack() {
     let totalPlayersAtTable = playerMap ? Array.from(playerMap.entries()).length : false;
     if(totalPlayersAtTable && totalPlayersAtTable > 1) {
-        messageHandlerLocked = true;
-        BlackjackManager.NewGame(playerMap);
-        displayPlayersHands();
-        playerTurn(1, totalPlayersAtTable);
+        collectBetsAndPlay(totalPlayersAtTable);
     } else {
         currentChannel.send('There\'s nobody at the table... trying typing \'-setup\' first, desu! ~~');
     }
