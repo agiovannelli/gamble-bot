@@ -110,10 +110,10 @@ function handlePlayerHitResult(player, turnCollector, seatNum) {
 
 /**
  * Displays who has won/tied/lost based on dealer hand value.
- * @function displayRoundResult
+ * @function displayAndHandleRoundResult
  * @private
  */
-function displayRoundResult() {
+function displayAndHandleRoundResult() {
     let dealer = playerMap.get(0);
     let resultString = '';
     currentChannel.send('Let\'s see the round results!');
@@ -122,15 +122,16 @@ function displayRoundResult() {
         if(currentPlayer && !currentPlayer.skipRound) {
             if((dealer.bust && !currentPlayer.bust) || (currentPlayer.handValue > dealer.handValue && !currentPlayer.bust && !dealer.bust)) {
                 resultString += `${currentPlayer.name}: wins!\n`;
+                PlayerManager.RewardPlayer(playerMap, i, 'win');
             } else if(currentPlayer.handValue === dealer.handValue && !currentPlayer.bust && !dealer.bust) {
                 resultString += `${currentPlayer.name}: draw!\n`;
+                PlayerManager.RewardPlayer(playerMap, i, 'draw');
             } else {
                 resultString += `${currentPlayer.name}: loses!\n`;
             }
         }
     }
     resultString !== '' ? currentChannel.send(resultString) : noop();
-    // TODO: Add logic to reward winner players and update their balance with earnings.
 }
 
 /**
@@ -178,7 +179,7 @@ function playerTurn(seatNum, maxSeatNum) {
     } else {
         BlackjackManager.DealerTurn(playerMap, 0);
         displayPlayersHands();
-        displayRoundResult();
+        displayAndHandleRoundResult();
         messageHandlerLocked = false;
     }
 }

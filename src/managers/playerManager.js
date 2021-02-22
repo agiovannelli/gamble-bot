@@ -23,6 +23,21 @@ function createBlackjackPlayer(playerMap) {
 }
 
 /**
+ * Updates player balance based on result value.
+ * @param {Map object of player data} playerMap 
+ * @param {Key of player in map} playerKey 
+ * @param {String indicating action to take on player balance data} gameResult
+ */
+function RewardPlayer(playerMap, playerKey, gameResult) {
+    let player = playerMap.get(playerKey);
+    if(gameResult === 'draw') {
+        player.balance += player.currentWager;
+    } else if(gameResult === 'win') {
+        player.balance += 2 * player.currentWager;
+    }
+}
+
+/**
  * Resets player bet data within player map.
  * @function ResetPlayerBetValues
  * @param {Map object of player data} playerMap 
@@ -100,5 +115,6 @@ module.exports = {
     RegisterPlayers: RegisterPlayers,
     HandlePlayerBet: HandlePlayerBet,
     DeterminePlayerMapKey: DeterminePlayerMapKey,
-    ResetPlayerBetValues: ResetPlayerBetValues
+    ResetPlayerBetValues: ResetPlayerBetValues,
+    RewardPlayer: RewardPlayer
 };
