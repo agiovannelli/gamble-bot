@@ -98,8 +98,10 @@ function NewGame(players) {
 
     for(let i = 0; i < 2; i++) {
         players.forEach((player, key) => {
-            Hit(player);
-            players.set(key, player);
+            if(!player.skipRound) {
+                Hit(player);
+                players.set(key, player);
+            }
         });
     }
 }
