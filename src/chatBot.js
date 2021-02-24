@@ -1,13 +1,13 @@
 'use strict';
 
-const Discord = require("discord.js");
 const BlackjackManager = require('./managers/blackjackManager.js');
 const PlayerManager = require('./managers/playerManager.js');
 
-let currentChannel;
-let messageHandlerLocked;
-let botId;
-let playerMap;
+let Discord,
+    currentChannel,
+    messageHandlerLocked,
+    botId,
+    playerMap;
 
 /**
  * No operation function.
@@ -34,7 +34,7 @@ function defaultMessage(msg) {
  * @private
  */
 function displayHelpOptions() {
-    currentChannel.send('It looks like you need reminded of all that I can do ~~ ^_^\nTo gather players for a game at the game table, type \'-setup\'.\nTo list the current players at the game table, type \'-table\'.\nTo play a round of blackjack,  type \'-play\'.');
+    currentChannel.send('It looks like you need reminded of all that I can do ~~ ^_^\nTo gather players for a game at the game table, type \'-setup\'.\nTo list the current players at the game table, type \'-table\'.\nTo play a round of blackjack,  type \'-play\'.\nTo see your current balance, type \'balance\'.');
 }
 
 /**
@@ -197,7 +197,7 @@ function collectBetsAndPlay(totalPlayersAtTable) {
     let totalBets = 0;
 
     let collectorOptions = {
-        time: 10000
+        time: 20000
     };
     let collectorFilter = msg => msg.content.toLowerCase().includes('-bet');
     let playerBetCollector = new Discord.MessageCollector(currentChannel, collectorFilter, collectorOptions);
@@ -281,13 +281,30 @@ function collectPlayers(game) {
 }
 
 /**
+ * Displays a given player's balance who is at the table.
+ * @function displayPlayerBalance
+ * @param {Message from Discord API} msg
+ * @private 
+ */
+function displayPlayerBalance(msg) {
+    let playerKey = PlayerManager.DeterminePlayerMapKey(playerMap, msg.author.id);
+    let player = playerMap.get(playerKey);
+    if(player) {
+        msg.reply(`your balance is $${player.balance}`);
+    } else {
+        msg.reply('Uwaaaaa... you\'re not at the table D:');
+    }
+}
+
+/**
  * Performs initial configurations for chat bot.
  * @function SetupChatBot
  * @param {Discord API client object} client 
  * @param {dotenv API properties} envProps 
  * @public
  */
-function SetupChatBot(client, envProps) {
+function SetupChatBot(client, envProps, discord) {
+    Discord = discord;
     botId = envProps.BOT_ID;
     currentChannel = client.channels.cache.get(envProps.CHANNEL_ID);
     currentChannel.send('Kakegurui-chan is now online!');
@@ -313,6 +330,9 @@ function MessageHandler(msg) {
                 break;
             case '-play':
                 playRoundOfBlackjack();
+                break;
+            case '-balance':
+                displayPlayerBalance(msg);
                 break;
             default:
                 defaultMessage(msg);
