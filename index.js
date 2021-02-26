@@ -6,7 +6,7 @@ const client = new Discord.Client();
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    ChatBot.SetupChatBot(client, process.env);
+    ChatBot.SetupChatBot(client, process.env, Discord);
 });
 
 client.on('message', ChatBot.MessageHandler);
