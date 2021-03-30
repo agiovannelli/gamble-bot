@@ -61,7 +61,7 @@ function CreateDeck(type) {
  * @public
  */
 function ShuffleDeck(deck) {
-    if(deck) {
+    if(deck && deck.length) {
         for (var i = deck.length - 1; i > 0; i--) {
             var j = Math.floor(Math.random() * (i + 1));
             var temp = deck[i];

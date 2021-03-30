@@ -91,7 +91,7 @@ function determinePlayerMaxHandValue(players, dealer) {
  * @public
  */
 function NewGame(players) {
-    deck = deckManager.CreateDeck();
+    deck = deckManager.CreateDeck('standard');
     deck = deckManager.ShuffleDeck(deck);
 
     resetPlayerValues(players);
