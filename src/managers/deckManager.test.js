@@ -1,3 +1,5 @@
+'use strict';
+
 describe('Tests for deck manager module', () => {
     const deckManager = require('./deckManager');
 

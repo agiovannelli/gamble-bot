@@ -1,3 +1,5 @@
+'use strict';
+
 describe('Tests for blackjack manager module', () => {
     const BlackjackManager = require('./blackjackManager');
     let PlayerMap;
