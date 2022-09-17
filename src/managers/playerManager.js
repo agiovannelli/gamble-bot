@@ -35,6 +35,7 @@ function RewardPlayer(playerMap, playerKey, gameResult) {
     } else if(gameResult === 'win') {
         player.balance += 2 * player.currentWager;
     }
+    playerMap.set(playerKey, player);
 }
 
 /**
@@ -80,7 +81,7 @@ function DeterminePlayerMapKey(playerMap, playerId) {
  */
 function HandlePlayerBet(playerMap, playerKey, playerWager) {
     let result = false;
-    if(playerKey && !isNaN(playerWager)) {
+    if(!isNaN(playerKey) && !isNaN(playerWager)) {
         let player = playerMap.get(playerKey);
         if(player.balance >= playerWager) {
             player.balance -= playerWager;
